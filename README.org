@@ -1,0 +1,50 @@
+
+*servlet-sentinel* - servlet filter which allows you to intercept responses from other servlets as well as modify them. It accepts the target servlet response and sends it to the corresponding shell script as an input. You can modify the script at the runtime and everything what it sends to stdout will be send back as a response.
+
+lambdaprime <id.blackmesa@gmail.com>
+
+* Usage
+
+*servlet-sentinel* supposed to be deployed into the WARs of the web applications which responses should be intercepted. There are two steps for this:
+
+1. Copy *servlet-sentinel* binaries into the WEB-INF/classes/ folder of the target WAR file.
+2. Add following lines into the WEB-INF/web.xml
+   
+#+BEGIN_EXAMPLE
+<filter>
+  <filter-name>ServletSentinel</filter-name>
+  <filter-class>id.servletsentinel.ServletSentinel</filter-class>
+</filter>
+<filter-mapping>
+  <filter-name>ServletSentinel</filter-name>
+  <url-pattern>/*</url-pattern>
+</filter-mapping>
+#+END_EXAMPLE
+
+Changed WAR should be deployed to the web server again.
+
+Once *servlet-sentinel* is started it intercepts the responses and sends them to /tmp/servlet-sentinel.sh script  and its output sends as the final response. In case servlet-sentinel.sh is not found the response is sent immediately.
+
+The servlet-sentinel.sh is being called like:
+
+#+BEGIN_EXAMPLE
+$ servlet-sentinel.sh <HEADERS> <PARAMETERS>
+#+END_EXAMPLE
+
+Where HEADER and PARAMETERS are HTTP headers and parameters of the request. The response for the request is passed through the stdin.
+
+* Examples
+
+- to store the response into the /tmp/response file
+
+#+BEGIN_EXAMPLE
+body=$(cat)
+echo $body | tee /tmp/response 
+#+END_EXAMPLE
+
+- if response contains keyword XXX - replace it with YYY, otherwise return the original response
+
+#+BEGIN_EXAMPLE
+body=$(cat)
+echo $body | sed -ne "s/XXX/YYY/" -e "p" | tee /tmp/response
+#+END_EXAMPLE
